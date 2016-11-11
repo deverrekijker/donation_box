@@ -37,9 +37,12 @@ void setup_lcd() {
   // Print a message to the LCD.
   lcd.backlight();
   lcd.print("MONEYBOX IS GO");
+  delay(2000);
+  lcd.clear();
+  lcd.print("GIMME COINS");
 };
 
-void setup() {  lcd.setCursor(3,0);  lcd.setCursor(3,0);
+void setup() {
   Serial.begin(9600);
   pinMode(INTERRUPT_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), onPulse, RISING);
@@ -53,16 +56,13 @@ void loop() {
     if (sum != old_sum) {
       Serial.print("Pulses: ");
 
-      lcd.clear();
-      lcd.print("Pulses:");
-      lcd.setCursor(9,0);
-      lcd.print(pulse_count);
-
       Serial.println(pulse_count);
       Serial.print("Last Coin Value: ");
       Serial.println(coin_value(last_coin));
       Serial.print("Sum: ");
 
+      lcd.clear();
+      lcd.print("GIMME COINS");
       lcd.setCursor(0,1);
       lcd.print("Total: €");
       lcd.setCursor(9,1);
