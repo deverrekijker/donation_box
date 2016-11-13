@@ -58,12 +58,12 @@ void loop() {
   switch(state){
     case IDLE:
     if (sum != old_sum) {
-      Serial.print("Pulses: ");
+      /*Serial.print("Pulses: ");
 
       Serial.println(pulse_count);
       Serial.print("Last Coin Value: ");
       Serial.println(coin_value(last_coin));
-      Serial.print("Sum: ");
+      Serial.print("Sum: ");*/
 
       lcd.clear();
       lcd.print("GIMME COINS");
@@ -74,23 +74,15 @@ void loop() {
       lcd.setCursor(9,1);
       lcd.print(sum);
 
-      Serial.println(sum);
+      /*Serial.println(sum);*/
       old_sum = sum;
     }
 
       break;
     case PULSE_TRAIN_IN_PROGRESS:
       state = PULSE_TRAIN_END;
-      delay(20);
-     if (state == PULSE_TRAIN_END){
-
-      if (now - last_pulse > MAX_PULSETRAIN_DURATION) {
-        state = IDLE;
-        last_coin = pulse_count;
-        sum = sum + coin_value(last_coin);
-      }
-    }
-
+      delay(50);
+      break;
     case PULSE_TRAIN_END:
       now = millis();
 
