@@ -7,6 +7,7 @@
 float sum = 0.00;
 float oldSum = 0.00;
 
+// Reset button
 int ledState = LOW;
 int resetState;
 int lastResetState = LOW;
@@ -14,6 +15,7 @@ int lastResetState = LOW;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
 
+// For Timing EEPROM writes
 unsigned long lastStoreTime = 0;
 
 void checkResetButton() {
@@ -58,7 +60,9 @@ void setupLCD() {
 
   lcd.clear();
   lcd.print(INIT_MESSAGE);
-  delay(2000);
+
+  delay(1000);
+
   lcd.clear();
   lcd.print(GENERAL_MESSAGE);
 }
@@ -66,7 +70,7 @@ void setupLCD() {
 void updateLCD() {
   lcd.clear();
   lcd.print(GENERAL_MESSAGE);
-  lcd.setCursor(0,1);
+  lcd.setCursor(0,1); // Move to line 1
   lcd.print(TOTAL_MESSAGE);
   lcd.setCursor(8,1); // TODO make dynamic according to length of message
   lcd.write(0);
@@ -80,13 +84,10 @@ void on_pulse() {
 
 void setup() {
   Serial.begin(BAUD_RATE);
-  delay(1000);
 
   pinMode(RESET_PIN, INPUT);
-
-  if (ENABLE_LCD == true) {
-    setupLCD();
-  }
+  pinMode(COUNT_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(COUNT_PIN), on_pulse, RISING);
 
   if (PERSISTENCE == true) {
     float stored_sum = readSum(START_ADDRESS); // Attempt to read stored sum from EEPROM
@@ -95,15 +96,13 @@ void setup() {
     } else {
       sum = stored_sum;
       oldSum = sum;
-
-      if (ENABLE_LCD == true) {
-        updateLCD();
-      }
     }
   }
 
-  pinMode(COUNT_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(COUNT_PIN), on_pulse, RISING);
+  if (ENABLE_LCD == true) {
+    setupLCD();
+    updateLCD();
+  }
 
   lastStoreTime = millis();
 }
