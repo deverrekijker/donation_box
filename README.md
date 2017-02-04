@@ -12,4 +12,4 @@ Check out the other related repositories for additional parts of this system.
   - Reset value button
 
 ## Flowchart
-![Coin Acceptor Flowchart](coin_acceptor.png)
+![Coin Acceptor Flowchart](coin_acceptor.svg)
