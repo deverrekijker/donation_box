@@ -4,45 +4,44 @@
 #include "storage.h"
 #include "lcd.h"
 
-float sum = 0.00;
-float oldSum = 0.00;
+float sum = DEFAULT_SUM;
+float oldSum = DEFAULT_SUM;
 
 // Reset button
-int ledState = LOW;
 int resetState;
-int lastResetState = LOW;
-
 unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
+int ledState = LOW;
+int lastLedState = ledState;
 
-// For Timing EEPROM writes
+// For timing EEPROM writes
 unsigned long lastStoreTime = 0;
 
+// For timing our sum values sent over serial
+unsigned long lastSendTime = 0;
+
 void checkResetButton() {
-  int reading = digitalRead(RESET_PIN);
+  resetState = digitalRead(RESET_PIN);
 
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastResetState) {
-    lastDebounceTime = millis();
-  }
+  // Filter out any noise, by setting a small buffer using our debounce delay value
+  if ((millis() - lastDebounceTime) > DEBOUNCE_DELAY) {
 
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    // if the button state has changed:
-    if (reading != resetState) {
-      resetState = reading;
-
-      if (resetState == HIGH) {
+    // If the reset button has been pressed and sum is not already default, activate the LED and set the sum to default value and activate the LED
+    if (resetState == RESET_VALUE && sum != DEFAULT_SUM) {
         ledState = HIGH;
-        sum = 0.00;
+        sum = DEFAULT_SUM;
+        Serial.println("RESET");
       }
-      else {
-        ledState = LOW;
-      }
+    else {
+      ledState = LOW;
     }
   }
 
-  digitalWrite(LED_PIN, ledState);
-  lastResetState = reading;
+  // If the LED state has changed
+  if (ledState != lastLedState) {
+    // Write our current LED state to our LED pin
+    digitalWrite(LED_PIN, ledState);
+    lastLedState = ledState;
+  }
 }
 
 void setupLCD() {
@@ -78,16 +77,22 @@ void updateLCD() {
   lcd.print(sum);
 }
 
-void on_pulse() {
+void onPulse() {
   sum += EUR_PER_PULSE;
+}
+
+void sendSum() {
+  Serial.println(sum);
+  lastSendTime = millis();
 }
 
 void setup() {
   Serial.begin(BAUD_RATE);
 
-  pinMode(RESET_PIN, INPUT);
+  // Let's use the internal pull-up resistors for our pins
+  pinMode(RESET_PIN, INPUT_PULLUP);
   pinMode(COUNT_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(COUNT_PIN), on_pulse, RISING);
+  attachInterrupt(digitalPinToInterrupt(COUNT_PIN), onPulse, RISING);
 
   if (PERSISTENCE == true) {
     float stored_sum = readSum(START_ADDRESS); // Attempt to read stored sum from EEPROM
@@ -104,13 +109,14 @@ void setup() {
     updateLCD();
   }
 
+  // Init our lastXTime values
   lastStoreTime = millis();
+  lastSendTime = millis();
 }
 
 void loop() {
   if (oldSum != sum) {
     delay(UPDATE_DELAY);
-    Serial.println(sum);
 
     if (ENABLE_LCD == true) {
       updateLCD();
@@ -120,10 +126,16 @@ void loop() {
     lastStoreTime = millis();
   }
 
+  // Check if our SERIAL_DELAY value has been exceeded and it's time to send a new value
+  if ((millis() - lastSendTime) > SERIAL_DELAY) {
+    sendSum();
+  }
+
   if (PERSISTENCE == true) {
     checkResetButton();
 
-    if ((millis() - lastStoreTime) > STORE_DELAY && readSum(START_ADDRESS) != sum) { // If STORE_DELAY is exceeded and the stored value is different to the current
+    // If STORE_DELAY is exceeded and the stored value is different to the current
+    if ((millis() - lastStoreTime) > STORE_DELAY && readSum(START_ADDRESS) != sum) {
       storeSum(START_ADDRESS, sum); // write the new sum to EEPROM, overwriting the last stored value
     }
   }
