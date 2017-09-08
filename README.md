@@ -15,4 +15,4 @@ Check out the other related repositories for additional parts of this system.
 ![Breadboard Wiring](wiring.png)
 
 ## Flowchart
-![Coin Acceptor Flowchart](coin_acceptor.png)
+![Coin Acceptor Flowchart](flowchart.png)
