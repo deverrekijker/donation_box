@@ -1,8 +1,6 @@
-#include <Arduino.h>
-
 #include "donation_box.h"
-#include "storage.h"
-#include "lcd.h"
+#include "storage/storage.h"
+#include "lcd/lcd.h"
 
 float sum = DEFAULT_SUM;
 float oldSum = DEFAULT_SUM;
@@ -19,6 +17,7 @@ unsigned long lastStoreTime = 0;
 // For timing our sum values sent over serial
 unsigned long lastSendTime = 0;
 
+// checkResetButton() - On function call, reads our RESET_PIN's state and resets our sum value to DEFAULT_SUM if RESET_VALUE is read.
 void checkResetButton() {
   resetState = digitalRead(RESET_PIN);
 
@@ -44,6 +43,7 @@ void checkResetButton() {
   }
 }
 
+// setupLCD() - Initiates the LCD display with all components needed and displays INIT_MESSAGE when ready.
 void setupLCD() {
   lcd.begin(LCD_X, LCD_Y);
 
@@ -53,7 +53,7 @@ void setupLCD() {
   }
 
   // Initialise Euro character
-  lcd.createChar(0, euro);
+  lcd.createChar(0, EURO_SYMBOL);
 
   lcd.backlight();
 
@@ -66,6 +66,7 @@ void setupLCD() {
   lcd.print(GENERAL_MESSAGE);
 }
 
+// updateLCD() - When called, updates the lcd display to show the latest sum.
 void updateLCD() {
   lcd.clear();
   lcd.print(GENERAL_MESSAGE);
@@ -77,10 +78,12 @@ void updateLCD() {
   lcd.print(sum);
 }
 
+// onPulse() - Called by our attachInterrupt each time a rising voltage is read on our COUNT_PIN (From the coin acceptor).
 void onPulse() {
   sum += EUR_PER_PULSE;
 }
 
+// sendSum() - Simply sends our sum over serial and updates lastSendTime to indicate that a sum was just sent.
 void sendSum() {
   Serial.println(sum);
   lastSendTime = millis();
@@ -95,7 +98,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(COUNT_PIN), onPulse, RISING);
 
   if (PERSISTENCE == true) {
-    float stored_sum = readSum(START_ADDRESS); // Attempt to read stored sum from EEPROM
+    float stored_sum = readFloat(START_ADDRESS); // Attempt to read stored sum from EEPROM
     if (stored_sum != stored_sum) { // check for NaN
       //Serial.println("No stored value found");
     } else {
@@ -115,6 +118,9 @@ void setup() {
 }
 
 void loop() {
+  checkResetButton(); // First check if we have a reset button press
+
+  // If our sum has been updated
   if (oldSum != sum) {
     delay(UPDATE_DELAY);
 
@@ -132,11 +138,9 @@ void loop() {
   }
 
   if (PERSISTENCE == true) {
-    checkResetButton();
-
     // If STORE_DELAY is exceeded and the stored value is different to the current
-    if ((millis() - lastStoreTime) > STORE_DELAY && readSum(START_ADDRESS) != sum) {
-      storeSum(START_ADDRESS, sum); // write the new sum to EEPROM, overwriting the last stored value
+    if ((millis() - lastStoreTime) > STORE_DELAY && readFloat(START_ADDRESS) != sum) {
+      storeFloat(START_ADDRESS, sum); // write the new sum to EEPROM, overwriting the last stored value
     }
   }
 }

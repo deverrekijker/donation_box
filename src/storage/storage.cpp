@@ -2,7 +2,8 @@
 #include <EEPROM.h>
 #include "storage.h"
 
-float readSum(unsigned int addr) {
+// readFloat() - Returns a float from a given EEPROM address index, addr
+float readFloat(unsigned int addr) {
   union {
     byte b[FLOAT_SIZE];
     float f;
@@ -15,7 +16,8 @@ float readSum(unsigned int addr) {
   return data.f;
 }
 
-void storeSum(unsigned int addr, float x) {
+// storeFloat() - Stores a float x at a specified EERPOM address index, addr
+void storeFloat(unsigned int addr, float x) {
   union {
     byte b[FLOAT_SIZE];
     float f;
